@@ -23,7 +23,13 @@ Stanford's password rules change based on password length:
 
 It must not be equal to your previous password or contain your username.
 
-The rules are compliant with PCI-DSS v3.2, 8.2.3 and NIST SP 800-63-2.
+The rules are compliant with PCI-DSS v3.2 8.2.3 and 8.2.5.
+
+When supplementing this module with
+[Flood Control](https://github.com/backdrop-contrib/flood_control)
+to increase the flood user window from 6 to at least 8 hours, the result
+provides enough entropy to meet NIST SP 800-63-2 Level 1 (or Level 2 with
+a 36-hour user lockout window).
 
 ![Stanford University IT Password Requirements Quick Guide](images/pwstrength.jpg)
 
@@ -36,17 +42,6 @@ Having no configuration is intentional because it prevents users from altering
 the password rules when they're annoyed by them. Disabling the module logs
 a high level alert for administrators to review.
 
-
-Limitations
------------
-
-* Password policies only apply to passwords set via user forms in the web
-  interface. Passwords changed by other means (commandline, web services, etc.)
-  will not be subject to password policy constraints.
-
-* Consider encouraging (or requiring as an organizational policy) users to use
-  a password manager to generate and store strong, per-site passwords:
-    https://en.wikipedia.org/wiki/List_of_password_managers
 
 Current Maintainer
 ------------------
