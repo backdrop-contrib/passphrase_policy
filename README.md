@@ -23,7 +23,7 @@ Stanford's password rules change based on password length:
 
 It must not be equal to your previous password or contain your username.
 
-The rules are compliant with PCI-DSS v3.2 8.2.3 and 8.2.5.
+The rules exceed the requirements from PCI-DSS v3.2 8.2.3 and 8.2.5.
 
 When supplementing this module with
 [Flood Control](https://github.com/backdrop-contrib/flood_control)
