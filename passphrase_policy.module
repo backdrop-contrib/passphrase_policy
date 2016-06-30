@@ -29,7 +29,7 @@ function passphrase_policy_user_insert($account) {
     // New users do not yet have an uid during the validation step, but they do
     // have at this insert step.  Store their first password in the system for
     // use with the history constraint.
-    _passphrase_policy_store_password($account->uid, $edit['pass']);
+    _passphrase_policy_store_password($account->uid, $account->pass);
   }
 }
 
