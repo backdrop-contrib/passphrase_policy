@@ -31,6 +31,9 @@ to increase the flood user window from 6 to at least 8 hours, the result
 provides enough entropy to meet NIST SP 800-63-2 Level 1 (or Level 2 with
 a 36-hour user lockout window).
 
+Most of the [CWE-521: Weak Password Requirements](https://cwe.mitre.org/data/definitions/521.html)
+are also resolved by this.
+
 ![Stanford University IT Password Requirements Quick Guide](images/pwstrength.jpg)
 
 Usage
