@@ -11,52 +11,58 @@
 /**
  * Description of the constraint.
  */
-function password_policy_constraint_uppercase_description() {
+function passphrase_policy_constraint_uppercase_description() {
   return array('name' => t('Uppercase'), 'description' => t('Password must contain the specified minimum number of uppercase letters.'));
 }
 
 /**
  * Error message of the constraint.
  */
-function password_policy_constraint_uppercase_error($constraint) {
-  return format_plural($constraint, 'Password must contain at least one uppercase character.', 'Password must contain at least @count uppercase characters.');
+function passphrase_policy_constraint_uppercase_error() {
+  return t('Password must contain at least one uppercase letter when less than 20 characters.');
 }
 
 /**
  * Password validation.
  */
-function password_policy_constraint_uppercase_validate($password, $constraint, $account) {
-  $chars = drupal_strlen($password);
+function passphrase_policy_constraint_uppercase_validate($password, $account) {
+  $chars = backdrop_strlen($password);
   $num = 0;
-  for ($i = 0; $i < $chars; ++$i) {
-    if (ctype_upper(drupal_substr($password, $i, 1))) {
-      $num++;
+  if ($chars < 20) {
+    for ($i = 0; $i < $chars; ++$i) {
+      if (ctype_upper(backdrop_substr($password, $i, 1))) {
+        $num++;
+      }
     }
+    return $num >= 1;
   }
-  return $num >= $constraint;
+  else
+    return TRUE;
 }
 
 /**
  * Javascript portion.
  */
-function password_policy_constraint_uppercase_js($constraint, $account) {
+function passphrase_policy_constraint_uppercase_js($account) {
   return <<<JS
 
     var i = 0;
     var num = 0;
     var chr = "";
-    while (i < value.length) {
-      chr = value.charAt(i);
-      if (chr.toUpperCase() != chr.toLowerCase()) {
-        if (chr == chr.toUpperCase()) {
-          num++;
+    if (value.length < 20) {
+      while (i < value.length) {
+        chr = value.charAt(i);
+        if (chr.toUpperCase() != chr.toLowerCase()) {
+          if (chr == chr.toUpperCase()) {
+            num++;
+          }
         }
+        i++;
       }
-      i++;
-    }
-    if (num < $constraint) {
-      strength = "low";
-      msg.push(translate.constraint_uppercase);
+      if (num < 1) {
+        strength = "low";
+        msg.push(translate.constraint_uppercase);
+      }
     }
 JS;
 }

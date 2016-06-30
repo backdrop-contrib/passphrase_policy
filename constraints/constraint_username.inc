@@ -11,35 +11,35 @@
 /**
  * Description of the constraint.
  */
-function password_policy_constraint_username_description() {
+function passphrase_policy_constraint_username_description() {
   return array('name' => t('Username'), 'description' => t('Password must not contain the username (case insensitive). Put any positive number to enforce this policy.'));
 }
 
 /**
  * Error message of the constraint.
  */
-function password_policy_constraint_username_error($constraint) {
+function passphrase_policy_constraint_username_error() {
   return t('Password must not contain the username.');
 }
 
 /**
  * Password validation.
  */
-function password_policy_constraint_username_validate($password, $constraint, $account) {
+function passphrase_policy_constraint_username_validate($password, $account) {
   // The username may be empty if not entered on the user registration form.
   if (!$account->name) {
     return TRUE;
   }
 
-  $username_lowercase = drupal_strtolower($account->name);
-  $password_lowercase = drupal_strtolower($password);
+  $username_lowercase = backdrop_strtolower($account->name);
+  $password_lowercase = backdrop_strtolower($password);
   return strpos($password_lowercase, $username_lowercase) === FALSE;
 }
 
 /**
  * Javascript portion.
  */
-function password_policy_constraint_username_js($constraint, $account) {
+function passphrase_policy_constraint_username_js($account) {
   // Add username as JavaScript setting.
   $username = isset($account->name) ? $account->name : '';
   $data = array(
@@ -47,7 +47,7 @@ function password_policy_constraint_username_js($constraint, $account) {
       'username' => $username,
     ),
   );
-  drupal_add_js($data, 'setting');
+  backdrop_add_js($data, 'setting');
 
   return <<<JS
 
@@ -57,7 +57,7 @@ function password_policy_constraint_username_js($constraint, $account) {
       username = usernameInput.val();
     }
     else {
-      username = Drupal.settings.passwordPolicy.username;
+      username = Backdrop.settings.passwordPolicy.username;
     }
     if (username) {
       var username_lowercase = username.toLowerCase();

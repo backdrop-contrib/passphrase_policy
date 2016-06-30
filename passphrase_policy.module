@@ -1,0 +1,390 @@
+<?php
+
+/**
+ * @file
+ * Enforcing restrictions on user passwords by defining complexity rules.
+ */
+
+/****************************************************************************/
+
+/****************************************************************************/
+/* Core API hooks                                                           */
+/****************************************************************************/
+
+/**
+ * Implements hook_help().
+ */
+function passphrase_policy_help($path, $arg) {
+  switch ($path) {
+    case "admin/help#passphrase_policy":
+      return '<p>' . t('The Passphrase Policy module allows you to enforce a specific level of password complexity for the user passwords on the system.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_user_insert().
+ */
+function passphrase_policy_user_insert($account) {
+  if (!empty($account->pass) && $account->uid) {
+    // New users do not yet have an uid during the validation step, but they do
+    // have at this insert step.  Store their first password in the system for
+    // use with the history constraint.
+    _passphrase_policy_store_password($account->uid, $edit['pass']);
+  }
+}
+
+/**
+ * Implements hook_user_presave().
+ *
+ * Adds entry to password history when password is changed for a user. This
+ * should work whether the password is changed via the User module forms or
+ * programmatically via user_save().
+ */
+function passphrase_policy_user_presave($account) {
+  // If there is a pass value...
+  if (!empty($account->pass)) {
+    // And if this is not a newly created user...
+    if (empty($account->is_new)) {
+      // And if the pass value is not the same as before...
+      if (!user_check_password($account->current_pass, $account)) {
+        // Then store the password hash to history.
+        _passphrase_policy_store_password($account->uid, $account->pass);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function passphrase_policy_user_delete($account) {
+  $txn = db_transaction();
+
+  // Ensure all deletes occur.
+  try {
+    db_delete('passphrase_policy_history')
+      ->condition('uid', $account->uid)
+      ->execute();
+  }
+  catch (Exception $e) {
+    // Something went wrong somewhere, so roll back now.
+    $txn->rollback();
+    // Log the exception to watchdog.
+    watchdog_exception('type', $e);
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function passphrase_policy_form_alter(&$form, &$form_state, $form_id) {
+  global $user;
+
+  switch ($form_id) {
+    case 'user_profile_form':
+    case 'user_register_form':
+      // Timing issues require reloading the user object to get the
+      // password_change property set.
+      $account = user_load($user->uid);
+
+      // Password change form.
+      $account = $form['#user'];
+      $roles = isset($account->roles) ? array_keys($account->roles) : array(BACKDROP_AUTHENTICATED_RID);
+      if ($form_id == 'user_register_form') {
+        $roles = array(BACKDROP_AUTHENTICATED_RID);
+      }
+      $constraints = _passphrase_policy_constraints();
+
+      $translate = array();
+      // Some policy constraints are active.
+      passphrase_policy_add_policy_js($constraints, $account, $form);
+      foreach ($constraints as $value) {
+        if ($value) {
+          $translate['constraint_' . $value] = _passphrase_policy_constraint_error($value);
+        }
+      }
+
+      // Printing out the restrictions.
+      if (isset($translate) && (isset($form['pass']) || isset($form['account']['pass']))) {
+        $restriction_html = '<div id="account-pass-restrictions">' . theme('item_list', array('items' => array_values($translate), 'title' => t('Password Requirements'))) . '</div>';
+        if (isset($form['account']) && is_array($form['account'])) {
+          $form['account']['pass']['#prefix'] = $restriction_html;
+        }
+        else {
+          $form['pass']['#prefix'] = $restriction_html;
+        }
+      }
+
+      // Set a custom form validate and submit handlers.
+      $form['#validate'][] = 'passphrase_policy_password_validate';
+      break;
+  }
+}
+
+/****************************************************************************/
+/* FAPI                                                                     */
+/****************************************************************************/
+
+/**
+ * Password save validate handler.
+ */
+function passphrase_policy_password_validate($form, &$form_state) {
+  global $user;
+
+  $values = $form_state['values'];
+  $account = isset($form['#user']) ? $form['#user'] : (object) array('uid' => 0);
+  if ($account->uid == 0) {
+    $account->roles = array(BACKDROP_AUTHENTICATED_RID => BACKDROP_AUTHENTICATED_RID);
+  }
+  if (isset($values['name'])) {
+    $account->name = $values['name'];
+  }
+
+  if (!empty($values['pass']) && !isset($values['auth_openid'])) {
+    $error = _passphrase_policy_constraint_validate($values['pass'], $account);
+    if ($error) {
+      form_set_error('pass', t('Your password has not met the following requirement(s):') . '<ul><li>' . implode('</li><li>', $error) . '</li></ul>');
+    }
+  }
+}
+
+/****************************************************************************/
+/* Constraints API                                                          */
+/****************************************************************************/
+
+/**
+ * Validates user password.
+ *
+ * Returns NULL on success or array with error messages
+ * from the constraints on failure.
+ *
+ * @param string $pass
+ *   Clear text password.
+ * @param object $account
+ *   Populated user object.
+ *
+ * @return null|string[]
+ *   NULL or array with error messages.
+ */
+function _passphrase_policy_constraint_validate($pass, &$account) {
+  $error = NULL;
+  $roles = @is_array($account->roles) ? array_keys($account->roles) : array();
+  $constraints = _passphrase_policy_constraints();
+  foreach ($constraints as $value) {
+    if (!call_user_func('passphrase_policy_constraint_' . $value . '_validate', $pass, $account)) {
+      $error[] = call_user_func('passphrase_policy_constraint_' . $value . '_error');
+    }
+  }
+  return $error;
+}
+
+/**
+ * Gets the constraint's name and description.
+ *
+ * @param string $name
+ *   Name of the constraint.
+ *
+ * @return array
+ *   Array containing the name and description.
+ */
+function _passphrase_policy_constraint_description($name) {
+  return call_user_func('passphrase_policy_constraint_' . $name . '_description');
+}
+
+/**
+ * Gets the constraint's error message.
+ *
+ * @param string $name
+ *   Name of the constraint.
+ * @param string $constraint
+ *   Constraint value.
+ *
+ * @return string
+ *   Error message.
+ */
+function _passphrase_policy_constraint_error($name) {
+  return call_user_func('passphrase_policy_constraint_' . $name . '_error');
+}
+
+/**
+ * Gets JavaScript code from the constraint to be added to password validation.
+ *
+ * @param string $name
+ *   Name of the constraint.
+ * @param string $constraint
+ *   Constraint value.
+ * @param object $account
+ *   User object.
+ *
+ * @return string
+ *   JavaScript code snippet for the constraint.
+ */
+function _passphrase_policy_constraint_js($name, $account) {
+  if (function_exists('passphrase_policy_constraint_' . $name . '_js')) {
+    return call_user_func('passphrase_policy_constraint_' . $name . '_js', $account);
+  }
+}
+
+/****************************************************************************/
+/* Auxiliary functions                                                      */
+/****************************************************************************/
+
+/**
+ * Loads contraints inc files.
+ */
+function _passphrase_policy_constraints() {
+  static $_passphrase_policy;
+
+  if (!isset($_passphrase_policy)) {
+    // Save all available constraints in a static variable.
+    $dir = backdrop_get_path('module', 'passphrase_policy') . '/constraints';
+    $constraints = file_scan_directory($dir, '/^constraint.*\.inc$/');
+    $_passphrase_policy = array();
+
+    foreach ($constraints as $file) {
+      if (is_file($file->uri)) {
+        include_once $file->uri;
+        $_passphrase_policy[] = backdrop_substr($file->name, 11);
+      }
+    }
+  }
+
+  return $_passphrase_policy;
+}
+
+/**
+ * Stores user password hash.
+ *
+ * @param int $uid
+ *   User id.
+ * @param string $pass
+ *   Password hash.
+ */
+function _passphrase_policy_store_password($uid, $pass) {
+  db_insert('passphrase_policy_history')
+    ->fields(array(
+      'uid' => $uid,
+      'pass' => $pass,
+    ))
+    ->execute();
+}
+
+/**
+ * Adds password policy JS.
+ *
+ * @param array $constraints
+ *   A policy array.
+ * @param object $account
+ *   User object of user for which the policy is applied.
+ * @param array $render_array
+ *   (Optional) A renderable array to attach the JavaScript to. If not
+ *   provided, the JavaScript will be added to the page directly.
+ */
+function passphrase_policy_add_policy_js(array $constraints, $account, array &$render_array = NULL) {
+  $s = <<<JS
+  /**
+   * Evaluates the strength of a user's password.
+   *
+   * Returns the estimated strength and the relevant output message.
+   */
+  Backdrop.evaluatePasswordStrength = function (value) {
+    var strength = "high";
+    var msg = [];
+    var translate = Backdrop.settings.password;
+    // Merge Password Policy translations.
+    for (var setting in Backdrop.settings.passwordPolicy) {
+      translate[setting] = Backdrop.settings.passwordPolicy[setting];
+    }
+    var trimmedSpaces = /^\s+|\s+$/.test(value);
+    if (/^\s+$/.test(value)) {
+      return {
+        strength: 10,
+        indicatorText: translate.lowStrength,
+        message: translate.allSpaces
+      };
+    }
+    value = value.replace(/^\s+|\s+$/g, '');
+JS;
+
+  // Print out each constraint's javascript password strength evaluation.
+  foreach ($constraints as $value) {
+    $s .= _passphrase_policy_constraint_js($value, $account);
+    // Constraints' error messages are used in javascript.
+    $translate['constraint_' . $value] = _passphrase_policy_constraint_error($value);
+  }
+
+  $s .= <<<JS
+
+    if (msg.length > 0) {
+      msg = translate.needsMoreVariation + "<ul><li>" + msg.join("</li><li>") + "</li></ul>";
+    }
+    else {
+      msg = "";
+    }
+    if (trimmedSpaces) {
+      msg = msg.concat(translate.trimmedSpaces);
+    }
+    var level = '';
+    if (strength === 'high') {
+      level = 100;
+    }
+    else {
+      level = 10;
+    }
+    if (strength === 'high') {
+      strength = translate.highStrength;
+    }
+    if (strength === 'medium') {
+      strength = translate.mediumStrength;
+    }
+    if (strength === 'low') {
+      strength = translate.lowStrength;
+    }
+    return {
+      strength: level,
+      indicatorText: strength,
+      message: msg
+    };
+  }
+JS;
+
+  $options = array('scope' => 'header', 'type' => 'inline', 'weight' => 10);
+  if (isset($render_array)) {
+    $options['data'] = $s;
+    $render_array['#attached']['js'][] = $options;
+  }
+  else {
+    backdrop_add_js($s, $options);
+  }
+
+  $data = array(
+    // Override some core 'password' settings.
+    // Backdrop by default rates passwords in terms of strength. However, a
+    // password that meets Password Policy constraints is not necessarily a
+    // strong password. So we rate the password in terms of "quality". A
+    // password is "bad" if it does not meet constraints, "good" if it does.
+    'password' => array(
+      'strengthTitle' => t('Password quality:'),
+      'lowStrength' => t('Bad'),
+      'mediumStrength' => t('Good'),
+      'highStrength' => t('Good'),
+    ),
+    // Add new settings for this module.
+    'passwordPolicy' => array_merge(array(
+        'trimmedSpaces' => t('The password has spaces at the beginning or end which are ignored.'),
+        'allSpaces' => t('The password is all spaces and will not be saved.'),
+        'needsMoreVariation' => t('The password does not include enough variation to be secure.'),
+      ),
+      $translate),
+  );
+  if (isset($render_array)) {
+    $options = array(
+      'data' => $data,
+      'type' => 'setting',
+    );
+    $render_array['#attached']['js'][] = $options;
+  }
+  else {
+    backdrop_add_js($data, 'setting');
+  }
+}

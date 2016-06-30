@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * Passphrase Policy module installation and upgrade code.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function passphrase_policy_schema() {
+  return array(
+    'passphrase_policy_history' => array(
+      'description' => "Stores users' old password hashes.",
+      'fields' => array(
+        'uid' => array(
+          'description' => "User's {users}.uid.",
+          'type' => 'int',
+          'not null' => TRUE,
+        ),
+        'pass' => array(
+          'type' => 'varchar',
+          'length' => 128,
+          'not null' => TRUE,
+          'default' => '',
+          'description' => "User's password (hashed).",
+        ),
+      ),
+      'foreign keys' => array(
+        'user' => array(
+          'table' => 'users',
+          'columns' => array('uid' => 'uid'),
+        ),
+      ),
+      'indexes' => array('uid' => array('uid')),
+    ),
+  );
+}
+
+/**
+ * Implements hook_install().
+ */
+function passphrase_policy_install() {
+  // Don't let users re-use their existing passwords.
+  // This is a MySQL-supported syntax.
+  // https://dev.mysql.com/doc/refman/5.7/en/ansi-diff-select-into-table.html
+  db_query('INSERT INTO {passphrase_policy_history} (`uid`, `pass`) SELECT `uid`, `pass` FROM {users} WHERE {users}.uid > 0');
+}
+
+/**
+ * Implements hook_disable().
+ */
+function passphrase_policy_disable() {
+  watchdog('passphrase_policy', 'Passphrase rules disabled!', array(), WATCHDOG_ALERT);
+}

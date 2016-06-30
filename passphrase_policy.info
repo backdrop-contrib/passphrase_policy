@@ -1,0 +1,4 @@
+name = Passphrase policy
+description = Encourage the use of pass phrases with minimum password requirements based on length.
+backdrop = 1.x
+type = module

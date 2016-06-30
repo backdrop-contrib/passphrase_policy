@@ -11,50 +11,56 @@
 /**
  * Description of the constraint.
  */
-function password_policy_constraint_digit_description() {
+function passphrase_policy_constraint_digit_description() {
   return array('name' => t('Digit'), 'description' => t('Password must contain the specified minimum number of digits.'));
 }
 
 /**
  * Error message of the constraint.
  */
-function password_policy_constraint_digit_error($constraint) {
-  return format_plural($constraint, 'Password must contain at least one digit.', 'Password must contain at least @count digits.');
+function passphrase_policy_constraint_digit_error() {
+  return t('Password must contain at least one number when it is 15 characters or less.');
 }
 
 /**
  * Password validation.
  */
-function password_policy_constraint_digit_validate($password, $constraint, $account) {
-  $chars = drupal_strlen($password);
+function passphrase_policy_constraint_digit_validate($password, $account) {
+  $chars = backdrop_strlen($password);
   $num = 0;
-  for ($i = 0; $i < $chars; ++$i) {
-    if (ctype_digit(drupal_substr($password, $i, 1))) {
-      $num++;
+  if ($chars < 16) {
+    for ($i = 0; $i < $chars; ++$i) {
+      if (ctype_digit(backdrop_substr($password, $i, 1))) {
+        $num++;
+      }
     }
+    return $num >= 1;
   }
-  return $num >= $constraint;
+  else 
+    return TRUE;
 }
 
 /**
  * Javascript portion.
  */
-function password_policy_constraint_digit_js($constraint, $account) {
+function passphrase_policy_constraint_digit_js($account) {
   return <<<JS
 
     var i = 0;
     var num = 0;
     var chr = "";
-    while (i < value.length) {
-      chr = value.charAt(i);
-      if ("1234567890".indexOf(chr) != -1) {
-        num++;
+    if (value.length < 16) {
+      while (i < value.length) {
+        chr = value.charAt(i);
+        if ("1234567890".indexOf(chr) != -1) {
+          num++;
+        }
+        i++;
       }
-      i++;
-    }
-    if (num < $constraint) {
-      strength = "low";
-      msg.push(translate.constraint_digit);
+      if (num < 1) {
+        strength = "low";
+        msg.push(translate.constraint_digit);
+      }      
     }
 JS;
 }

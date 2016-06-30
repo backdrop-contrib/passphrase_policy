@@ -11,50 +11,56 @@
 /**
  * Description of the constraint.
  */
-function password_policy_constraint_punctuation_description() {
+function passphrase_policy_constraint_punctuation_description() {
   return array('name' => t('Punctuation'), 'description' => t('Password must contain the specified minimum number of punctuation (not whitespace or an alphanumeric) characters.'));
 }
 
 /**
  * Error message of the constraint.
  */
-function password_policy_constraint_punctuation_error($constraint) {
-  return format_plural($constraint, 'Password must contain at least one punctuation (not whitespace or an alphanumeric) character.', 'Password must contain at least @count punctuation (not whitespace or an alphanumeric) characters.');
+function passphrase_policy_constraint_punctuation_error() {
+  return t('Password must contain at least one punctuation mark when less than 12 characters.');
 }
 
 /**
  * Password validation.
  */
-function password_policy_constraint_punctuation_validate($password, $constraint, $account) {
-  $chars = drupal_strlen($password);
+function passphrase_policy_constraint_punctuation_validate($password, $account) {
+  $chars = backdrop_strlen($password);
   $num = 0;
-  for ($i = 0; $i < $chars; ++$i) {
-    if (ctype_punct(drupal_substr($password, $i, 1))) {
-      $num++;
+  if ($chars < 12) {
+    for ($i = 0; $i < $chars; ++$i) {
+      if (ctype_punct(backdrop_substr($password, $i, 1))) {
+        $num++;
+      }
     }
+    return $num >= 1;
   }
-  return $num >= $constraint;
+  else 
+    return TRUE;
 }
 
 /**
  * Javascript portion.
  */
-function password_policy_constraint_punctuation_js($constraint, $account) {
+function passphrase_policy_constraint_punctuation_js($account) {
   return <<<JS
 
     var i = 0;
     var num = 0;
     var chr = "";
-    while (i < value.length) {
-      chr = value.charAt(i);
-      if (chr.toUpperCase() == chr.toLowerCase() && "1234567890".indexOf(chr) == -1 && chr != ' ') {
-        num++;
+    if (value.length < 12) {
+      while (i < value.length) {
+        chr = value.charAt(i);
+        if (chr.toUpperCase() == chr.toLowerCase() && "1234567890".indexOf(chr) == -1 && chr != ' ') {
+          num++;
+        }
+        i++;
       }
-      i++;
-    }
-    if (num < $constraint) {
-      strength = "low";
-      msg.push(translate.constraint_punctuation);
+      if (num < 1) {
+        strength = "low";
+        msg.push(translate.constraint_punctuation);
+      }
     }
 JS;
 }
