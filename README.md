@@ -29,19 +29,15 @@ The rules meet or exceed the following public standards:
 * [PCI-DSS v3.2](https://www.pcisecuritystandards.org/documents/PCI-DSS-v3_2-SAQ-D_ServiceProvider.pdf) 8.2.5
 * [NIST SP 800-63-2](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63-2.pdf) Level 1
 * [NIST SP 800-63-2](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63-2.pdf) Level 2
-  (if user
-  [flood control](https://github.com/backdrop-contrib/flood_control)
-  window is set to at least 13 hours)
+  (if user [flood control](https://github.com/backdrop-contrib/flood_control) window is set to at least 13 hours)
 * [Australian Government ISM](http://www.asd.gov.au/infosec/ism/)
   Control: 0421; Revision 4; Updated: Apr-15.
   Applicable up to SECRET information and systems.
 * [Australian Government ISM](http://www.asd.gov.au/infosec/ism/)
   Control: 0422; Revision 4; Updated: Apr-15.
-  Applicable up to TOP SECRET information and systems when combined with
-  two-factor authentication.
+  Applicable up to TOP SECRET information and systems when combined with two-factor authentication.
 
-Most of the [CWE-521: Weak Password Requirements](https://cwe.mitre.org/data/definitions/521.html)
-are also resolved by this.
+Most of the [CWE-521: Weak Password Requirements](https://cwe.mitre.org/data/definitions/521.html) are also resolved by this.
 
 ![Stanford University IT Password Requirements Quick Guide](images/pwstrength.jpg)
 
