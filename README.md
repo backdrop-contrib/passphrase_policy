@@ -16,20 +16,29 @@ can provide better protection against hackers.
 
 Stanford's password rules change based on password length:
 
-* 8-11: mixed case letters, numbers, & symbols
+* 10-11: mixed case letters, numbers, & symbols
 * 12-15: mixed case letters & numbers
 * 16-19: mixed case letters
 * 20+: no restrictions
 
 It must not be equal to your previous password or contain your username.
 
-The rules exceed the requirements from PCI-DSS v3.2 8.2.3 and 8.2.5.
+The rules meet or exceed the following public standards:
 
-When supplementing this module with
-[Flood Control](https://github.com/backdrop-contrib/flood_control)
-to increase the flood user window from 6 to at least 8 hours, the result
-provides enough entropy to meet NIST SP 800-63-2 Level 1 (or Level 2 with
-a 36-hour user lockout window).
+* [PCI-DSS v3.2](https://www.pcisecuritystandards.org/documents/PCI-DSS-v3_2-SAQ-D_ServiceProvider.pdf) 8.2.3
+* [PCI-DSS v3.2](https://www.pcisecuritystandards.org/documents/PCI-DSS-v3_2-SAQ-D_ServiceProvider.pdf) 8.2.5
+* [NIST SP 800-63-2](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63-2.pdf) Level 1
+* [NIST SP 800-63-2](http://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-63-2.pdf) Level 2
+  (if user
+  [flood control](https://github.com/backdrop-contrib/flood_control)
+  window is set to at least 13 hours)
+* [Australian Government ISM](http://www.asd.gov.au/infosec/ism/)
+  Control: 0421; Revision 4; Updated: Apr-15.
+  Applicable up to SECRET information and systems.
+* [Australian Government ISM](http://www.asd.gov.au/infosec/ism/)
+  Control: 0422; Revision 4; Updated: Apr-15.
+  Applicable up to TOP SECRET information and systems when combined with
+  two-factor authentication.
 
 Most of the [CWE-521: Weak Password Requirements](https://cwe.mitre.org/data/definitions/521.html)
 are also resolved by this.

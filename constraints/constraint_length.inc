@@ -19,7 +19,7 @@ function passphrase_policy_constraint_length_description() {
  * Error message of the constraint.
  */
 function passphrase_policy_constraint_length_error() {
-  return t('Password must be at least 8 characters in length.');
+  return t('Password must be at least 10 characters in length.');
 }
 
 /**
@@ -27,7 +27,7 @@ function passphrase_policy_constraint_length_error() {
  */
 function passphrase_policy_constraint_length_validate($password, $account) {
   $length = backdrop_strlen($password);
-  return $length >= 8;
+  return $length >= 10;
 }
 
 /**
@@ -36,7 +36,7 @@ function passphrase_policy_constraint_length_validate($password, $account) {
 function passphrase_policy_constraint_length_js($account) {
   return <<<JS
 
-    if (!value.length || value.length < 8) {
+    if (!value.length || value.length < 10) {
       strength = "low";
       msg.push(translate.constraint_length);
     }
