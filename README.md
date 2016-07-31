@@ -1,18 +1,11 @@
 Passphrase Policy
 =================
 
-This module provides a way to enforce restrictions on user passwords by
-defining a password policy that encourages the use of pass phrases.
+Enforce restrictions on user passwords by defining a password policy that encourages the use of pass phrases.
 
-The password constraints are pre-defined and must be met before a user
-password change will be accepted. Each constraint has a parameter
-allowing for the minimum number of valid conditions which must be met before
-the constraint is satisfied.
+The password constraints are pre-defined and must be met before a user password change will be accepted. Each constraint has a parameter allowing for the minimum number of valid conditions which must be met before the constraint is satisfied.
 
-The password rules follow the model from Stanford University's IT department.
-Stanford recommends "pass phrases" instead of passwords. Pass phrases are
-longer, but easier to remember than complex passwords, and if well-chosen
-can provide better protection against hackers.
+The password rules follow the model from Stanford University's IT department. Stanford recommends "pass phrases" instead of passwords. Pass phrases are longer, but easier to remember than complex passwords, and if well-chosen can provide better protection against hackers.
 
 Stanford's password rules change based on password length:
 
@@ -46,9 +39,7 @@ Usage
 
 Enable the module for full functionality. There is no configuration.
 
-Having no configuration is intentional because it prevents users from altering
-the password rules when they're annoyed by them. Disabling the module logs
-a high level alert for administrators to review.
+Having no configuration is intentional because it prevents users from altering the password rules when they're annoyed by them. Disabling the module logs a high level alert for administrators to review.
 
 
 Current Maintainer
