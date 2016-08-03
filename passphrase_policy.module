@@ -41,15 +41,16 @@ function passphrase_policy_user_insert($account) {
  * programmatically via user_save().
  */
 function passphrase_policy_user_presave($account) {
-  // If there is a pass value...
-  if (!empty($account->pass)) {
-    // And if this is not a newly created user...
-    if (empty($account->is_new)) {
-      // And if the pass value is not the same as before...
-      if (!user_check_password($account->current_pass, $account)) {
-        // Then store the password hash to history.
-        _passphrase_policy_store_password($account->uid, $account->pass);
-      }
+  // If there is a pass value, the old password is included, and not a new account...
+  if (!empty($account->pass) && !empty($account->current_pass) && empty($account->is_new)) {
+    // There is precedent for requiring core files right here
+    // in user_validate_current_pass().
+    require_once BACKDROP_ROOT . '/' . settings_get('password_inc', 'core/includes/password.inc');
+
+    // And if the pass value is not the same as before...
+    if (!user_check_password($account->current_pass, $account)) {
+      // Then store the password hash to history.
+      _passphrase_policy_store_password($account->uid, $account->pass);
     }
   }
 }
