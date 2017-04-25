@@ -90,9 +90,9 @@ function passphrase_policy_form_alter(&$form, &$form_state, $form_id) {
 
       // Password change form.
       $account = $form['#user'];
-      $roles = isset($account->roles) ? array_keys($account->roles) : array(BACKDROP_AUTHENTICATED_RID);
+      $roles = isset($account->roles) ? array_keys($account->roles) : array(BACKDROP_AUTHENTICATED_ROLE);
       if ($form_id == 'user_register_form') {
-        $roles = array(BACKDROP_AUTHENTICATED_RID);
+        $roles = array(BACKDROP_AUTHENTICATED_ROLE);
       }
       $constraints = _passphrase_policy_constraints();
 
@@ -135,7 +135,7 @@ function passphrase_policy_password_validate($form, &$form_state) {
   $values = $form_state['values'];
   $account = isset($form['#user']) ? $form['#user'] : (object) array('uid' => 0);
   if ($account->uid == 0) {
-    $account->roles = array(BACKDROP_AUTHENTICATED_RID => BACKDROP_AUTHENTICATED_RID);
+    $account->roles = array(BACKDROP_AUTHENTICATED_ROLE => BACKDROP_AUTHENTICATED_ROLE);
   }
   if (isset($values['name'])) {
     $account->name = $values['name'];
