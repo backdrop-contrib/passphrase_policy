@@ -45,7 +45,7 @@ Having no configuration is intentional because it prevents users from altering t
 Current Maintainer
 ------------------
 
-* David Norman (https://github.com/deekayen)
+* None
 
 
 Credits
