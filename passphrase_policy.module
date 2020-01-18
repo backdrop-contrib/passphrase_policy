@@ -82,6 +82,23 @@ function passphrase_policy_form_alter(&$form, &$form_state, $form_id) {
   global $user;
 
   switch ($form_id) {
+    case 'user_pass_reset_form':
+      $account = $form_state['build_info']['args'][0];
+      $constraints = _passphrase_policy_constraints();
+      passphrase_policy_add_policy_js($constraints, $account, $form);
+      $translate = array();
+      foreach ($constraints as $value) {
+        $translate['constraint_' . $value] = _passphrase_policy_constraint_error($value);
+      }
+      $restriction_html = theme('item_list', array('items' => array_values($translate)));
+      $form['restrictions'] = array(
+        '#type' => 'item',
+        '#title' => t('Password Requirements'),
+        '#markup' => $restriction_html,
+      );
+      $form['#validate'][] = 'passphrase_policy_password_validate';
+      break;
+
     case 'user_profile_form':
     case 'user_register_form':
       // Timing issues require reloading the user object to get the
