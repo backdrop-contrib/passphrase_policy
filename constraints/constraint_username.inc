@@ -27,7 +27,7 @@ function passphrase_policy_constraint_username_error() {
  */
 function passphrase_policy_constraint_username_validate($password, $account) {
   // The username may be empty if not entered on the user registration form.
-  if (!$account->name) {
+  if (!isset($account->name)) {
     return TRUE;
   }
 
